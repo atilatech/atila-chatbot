@@ -10,5 +10,6 @@ connection_string = f"mongodb+srv://{MONGODB_USERNAME}:{MONGODB_PASSWORD}@{MONGO
 client = MongoClient(connection_string)
 database = client['atila']
 
-def save_data(table_name,data):
+
+def save_data(table_name, data):
     database[table_name].insert_one(data)
