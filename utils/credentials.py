@@ -10,4 +10,4 @@ TWILIO_ACCOUNT_SID = os.getenv('TWILIO_ACCOUNT_SID', False)
 TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN', False)
 WHATSAPP_NUMBER = os.getenv('WHATSAPP_NUMBER', False)
 
-ATILA_CORE_SERVICE_URL = "http://127.0.0.1:8000/api"
+ATILA_CORE_SERVICE_URL = "https://atila-core-service.herokuapp.com/api"
