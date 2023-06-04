@@ -2,11 +2,9 @@ import asyncio
 
 from flask import Flask, request
 
-from utils.atlas import is_valid_video, handle_incoming_atlas_chat_message
+from utils.atlas import handle_incoming_atlas_chat_message
 from utils.credentials import WHATSAPP_NUMBER
 import datetime
-
-from utils.whatsapp import send_whatsapp_message
 
 app = Flask(__name__)
 
