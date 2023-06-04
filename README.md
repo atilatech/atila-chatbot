@@ -23,7 +23,8 @@ See:
 
 ### Whatsapp Quickstart
 
-`source .env; python app.py` or `flask run`
+`source .env; python app.py` or `flask run --debug`
+`--debug` enables hot reload
 
 `brew install ngrok/ngrok/ngrok`
 `ngrok http 5000`

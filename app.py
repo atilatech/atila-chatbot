@@ -2,6 +2,7 @@ import asyncio
 
 from flask import Flask, request
 
+from utils.atlas import is_valid_video, handle_incoming_atlas_chat_message
 from utils.credentials import WHATSAPP_NUMBER
 import datetime
 
@@ -22,7 +23,7 @@ def index():
 async def whatsapp():
     print('/whatsapp')
     print('request.form', request.form)
-    incoming_msg = request.form.get('Body').lower()
+    incoming_msg = request.form.get('Body')
     incoming_number = request.form.get('WaId')
     first_name = request.form.get('ProfileName')
 
@@ -31,13 +32,12 @@ async def whatsapp():
         print(response)
         return response
 
-    send_whatsapp_message(f'hey {first_name}', incoming_number)
-
-    return 'ok'
+    return handle_incoming_atlas_chat_message(incoming_msg, incoming_number)
 
 
 async def run_flask_app():
     app.run(threaded=True)
+
 
 if __name__ == '__main__':
     # Run the Flask app asynchronously
