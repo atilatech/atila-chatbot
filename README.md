@@ -74,3 +74,11 @@ ps aux | grep python
 
 The chatbot also exists as a whatsapp chatbot.
 
+## Data Modelling
+
+conversation_state
+- phone
+- platform
+- app
+- command
+- input_message

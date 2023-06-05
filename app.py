@@ -21,7 +21,7 @@ def index():
 async def whatsapp():
     print('/whatsapp')
     print('request.form', request.form)
-    incoming_msg = request.form.get('Body')
+    incoming_msg = request.form.get('Body').strip()
     incoming_number = request.form.get('WaId')
     first_name = request.form.get('ProfileName')
 
@@ -30,11 +30,14 @@ async def whatsapp():
         print(response)
         return response
 
-    return handle_incoming_atlas_chat_message(incoming_msg, incoming_number)
+    return handle_incoming_atlas_chat_message(incoming_msg, incoming_number, first_name)
 
 
 async def run_flask_app():
-    app.run(threaded=True)
+    # Mac OSX Monterey (12.x) currently uses ports 5000 and 7000 for its Control centre hence the issue.
+    # Try running your app from port other than 5000 and 7000
+    # https://stackoverflow.com/a/72797062/5405197
+    app.run(threaded=True, port=5001)
 
 
 if __name__ == '__main__':
