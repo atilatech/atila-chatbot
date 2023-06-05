@@ -25,9 +25,13 @@ help_paragraph = f"""
 {help_text}\n 
 """
 
+search_help_text = f"Please send a search in the following format: search <youtube link> <search phrase>"
+
 commands = ['help', 'email', 'search', 'contact']
 
 MAX_FREE_SEARCHES = 3
+
+subscription_link = "https://buy.stripe.com/9AQaI6fEh9SV63KeUU"
 
 
 def can_transcribe_and_search_video(incoming_number):
@@ -38,7 +42,7 @@ def can_transcribe_and_search_video(incoming_number):
 
     if not is_premium and searches_count >= MAX_FREE_SEARCHES:
         send_whatsapp_message("You've reached the limit of free searches. "
-                              "Type 'upgrade' to get a paid subscription",
+                              f"Upgrade to get more searches:\n\n{subscription_link}",
                               incoming_number)
         return False
 
@@ -99,13 +103,14 @@ MESSAGE_CONTEXT_WINDOW = 5
 def update_conversation_state(message: str, phone: str, first_name: str):
     # store last N messages
     # https://www.mongodb.com/docs/manual/reference/operator/update/slice/#slice-from-the-end-of-the-array
+    print('update_conversation_state', message)
     result = database['users'].update_one(
         {'phone': phone, 'platform': 'whatsapp'},
         {
             '$push': {
                 'messages': {
                     '$each': [message],
-                    '$slice': MESSAGE_CONTEXT_WINDOW
+                    '$slice': -MESSAGE_CONTEXT_WINDOW
                 }
             },
             '$set': {'first_name': first_name}
@@ -124,13 +129,7 @@ def seconds_to_minutes_and_seconds(seconds):
     return minutes_and_seconds
 
 
-def handle_search(incoming_message, incoming_number):
-    if len(incoming_message.split(' ')) == 3:
-        _, url, search_term = incoming_message.split(' ')
-    else:
-        send_whatsapp_message('enter a search term', incoming_number)
-        return
-
+def handle_search(search_term, url, incoming_number):
     results = transcribe_and_search_video(query=search_term, url=url, summarize=False,
                                           incoming_number=incoming_number)
 
@@ -181,9 +180,15 @@ def handle_command(incoming_message, incoming_number, conversation_state):
     if command.startswith('help'):
         send_whatsapp_message(help_paragraph, incoming_number)
         return
-    print('incoming_message.split(' ')', incoming_message.split(' '))
     if command.startswith('search'):
-        handle_search(incoming_message, incoming_number)
+        if len(incoming_message.split(' ')) >= 3:
+            _, url, *search_term = incoming_message.split(' ')
+            search_term = ' '.join(search_term)
+            handle_search(search_term, url, incoming_number)
+        elif len(conversation_state['messages']) > 1:
+            send_whatsapp_message(f"Enter your search phrase", incoming_number)
+        else:
+            send_whatsapp_message(search_help_text, incoming_number)
 
 
 def standardize_input(incoming_message):
@@ -204,6 +209,11 @@ def handle_incoming_atlas_chat_message(incoming_message: str, incoming_number: s
         handle_command(incoming_message, incoming_number, conversation_state)
     elif incoming_message.startswith('http'):
         handle_transcribe_link(incoming_message, incoming_number)
+    elif len(conversation_state['messages']) > 1 and \
+            standardize_input(conversation_state['messages'][-2]).startswith('search'):
+        search_term = conversation_state['messages'][-1]
+        url = conversation_state['messages'][-3]
+        handle_search(search_term, url, incoming_number)
     else:
         send_whatsapp_message(start_text, incoming_number)
 
