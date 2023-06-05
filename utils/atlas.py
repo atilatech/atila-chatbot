@@ -1,4 +1,5 @@
 from time import sleep
+import requests
 
 from utils.credentials import ATILA_CORE_SERVICE_URL
 from pytube import YouTube
@@ -7,7 +8,7 @@ from pytube.exceptions import RegexMatchError
 from utils.database import database
 from utils.whatsapp import send_whatsapp_message, TWILIO_CHARACTER_LIMIT
 
-invalid_message = "Invalid link. Please submit a valid youtube link."
+invalid_link_message = "Invalid link. Please submit a valid youtube link."
 youtube_instructions = "Submit a link to a Youtube video, channel or playlist."
 help_text = "Type 'help' to see more detailed instructions and examples."
 start_text = f"""
@@ -26,9 +27,35 @@ help_paragraph = f"""
 
 commands = ['help', 'email', 'search', 'contact']
 
+MAX_FREE_SEARCHES = 3
 
-def transcribe_and_search_video(query="", url=None, summarize=True) -> dict:
-    import requests
+
+def can_transcribe_and_search_video(incoming_number):
+    conversation_state = database['users'].find_one(
+        {'phone': incoming_number, 'platform': 'whatsapp'})
+    searches_count = conversation_state.get('atlas_searches', 0)
+    is_premium = conversation_state.get('is_premium', False)
+
+    if not is_premium and searches_count >= MAX_FREE_SEARCHES:
+        send_whatsapp_message("You've reached the limit of free searches. "
+                              "Type 'upgrade' to get a paid subscription",
+                              incoming_number)
+        return False
+
+    return True
+
+
+def transcribe_and_search_video(query="", url=None, summarize=True, incoming_number=None) -> dict | None:
+    video = get_video_from_url(url)
+    if not video:
+        send_whatsapp_message(invalid_link_message, incoming_number)
+        return None
+
+    if not can_transcribe_and_search_video(incoming_number):
+        return None
+
+    send_whatsapp_message(f"Please wait. Getting transcript for: {video.title}", incoming_number,
+                          media_url=video.thumbnail_url)
 
     endpoint_url = f"{ATILA_CORE_SERVICE_URL}/atlas/search"
 
@@ -43,6 +70,11 @@ def transcribe_and_search_video(query="", url=None, summarize=True) -> dict:
     try:
         response.raise_for_status()
         result = response.json()
+        if result.get('created'):
+            # only count against the free limit if it's a new video
+            database['users'].update_one(
+                {'phone': incoming_number, 'platform': 'whatsapp'},
+                {'$inc': {'atlas_searches': 1}})
         return result
     except requests.HTTPError as err:
         error_message = response.text
@@ -99,7 +131,11 @@ def handle_search(incoming_message, incoming_number):
         send_whatsapp_message('enter a search term', incoming_number)
         return
 
-    results = transcribe_and_search_video(query=search_term, url=url, summarize=False)
+    results = transcribe_and_search_video(query=search_term, url=url, summarize=False,
+                                          incoming_number=incoming_number)
+
+    if not results:
+        return
 
     title = results['video']['title']
     if len(results['results']['matches']) > 0:
@@ -116,32 +152,28 @@ def handle_search(incoming_message, incoming_number):
 
 
 def handle_transcribe_link(incoming_message, incoming_number):
-    video = get_video_from_url(incoming_message)
-    if not video:
-        send_whatsapp_message(invalid_message, incoming_number)
+    result = transcribe_and_search_video(url=incoming_message, incoming_number=incoming_number)
+    if not result:
+        return
+    elif 'error' in result:
+        send_whatsapp_message(result['error'], incoming_number)
     else:
-        send_whatsapp_message(f"Please wait. Getting transcript for: {video.title}", incoming_number,
-                              media_url=video.thumbnail_url)
-        result = transcribe_and_search_video(url=incoming_message)
-        if 'error' in result:
-            send_whatsapp_message(result['error'], incoming_number)
-        else:
-            video_text = result['video']['text']
-            if 'summaries' in result['video']:
-                video_text = "\n\n".join(summary['text'] for summary in result['video']['summaries'])
+        video_text = result['video']['text']
+        if 'summaries' in result['video']:
+            video_text = "\n\n".join(summary['text'] for summary in result['video']['summaries'])
 
-            title = f"*{result['video']['title']}*\n\n"
-            send_whatsapp_message(title + video_text, incoming_number,
-                                  media_url=result['video']['image'])
+        title = f"*{result['video']['title']}*\n\n{result['video']['url']}"
+        send_whatsapp_message(title + video_text, incoming_number,
+                              media_url=result['video']['image'])
 
-            sleep(3)
-            if len(video_text) > TWILIO_CHARACTER_LIMIT:
-                send_whatsapp_message("1. Reply 'email'"
-                                      "to get the full transcript sent to your email.",
-                                      incoming_number)
-
-            send_whatsapp_message("Reply 'search' to find a keyword within the video",
+        sleep(3)
+        if len(video_text) > TWILIO_CHARACTER_LIMIT:
+            send_whatsapp_message("1. Reply 'email'"
+                                  "to get the full transcript sent to your email.",
                                   incoming_number)
+
+        send_whatsapp_message("Reply 'search' to find a keyword within the video",
+                              incoming_number)
 
 
 def handle_command(incoming_message, incoming_number, conversation_state):

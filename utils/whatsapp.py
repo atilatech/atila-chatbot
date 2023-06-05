@@ -10,7 +10,6 @@ TWILIO_CHARACTER_LIMIT = 1000  # Twilio has a 1600 character limit. https://www.
 
 
 def send_whatsapp_message(text, destination_number: str, media_url: str = None):
-    print('send_whatsapp_message', text, destination_number)
     if not destination_number.startswith('whatsapp:'):
         destination_number = f'whatsapp:{destination_number}'
 
