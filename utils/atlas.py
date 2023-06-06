@@ -88,6 +88,29 @@ def transcribe_and_search_video(query="", url=None, summarize=True, incoming_num
         print(f"An error occurred: {err}")
         return {'error': err}
 
+def calculate_transcription_cost(url, incoming_number) -> dict:
+
+    send_whatsapp_message(f"Please wait. Getting transcript information", incoming_number)
+
+    endpoint_url = f"{ATILA_CORE_SERVICE_URL}/atlas/search/cost"
+    payload = {
+        "url": url,
+        "phone": incoming_number
+    }
+
+    response = requests.post(endpoint_url, json=payload)
+
+    try:
+        response.raise_for_status()
+        result = response.json()
+        return result
+    except requests.HTTPError as err:
+        error_message = response.text
+        print(f"HTTP Error occurred: {err}\nError message: {error_message}")
+        return {'error': error_message}
+    except requests.RequestException as err:
+        print(f"An error occurred: {err}")
+        return {'error': err}
 
 def get_video_from_url(url):
     try:
@@ -208,7 +231,24 @@ def handle_incoming_atlas_chat_message(incoming_message: str, incoming_number: s
     if any(standardize_input(incoming_message).startswith(command) for command in commands):
         handle_command(incoming_message, incoming_number, conversation_state)
     elif incoming_message.startswith('http'):
-        handle_transcribe_link(incoming_message, incoming_number)
+        youtube_collection = ['/playlist', '/c/', '/@', 'channel']
+        if any(phrase in standardize_input(incoming_message) for phrase in youtube_collection):
+            transcription_cost = calculate_transcription_cost(incoming_message, incoming_number)
+            send_whatsapp_message(transcription_cost['cost_breakdown_text'], incoming_number)
+
+            video_count = transcription_cost["video_count"]
+            total_videos_count = transcription_cost["total_videos_count"]
+            if total_videos_count > video_count:
+                message = f"{total_videos_count} videos exist, " \
+                          f"but a maximum of {video_count} videos can be transcribed.\n"
+                message += f"Type 'contact' to contact us about transcribing more videos"
+                send_whatsapp_message(message, incoming_number)
+
+            payment_message = f"Pay using the following link to receive an email with your transcripts.\n"
+            payment_message += transcription_cost['payment_link']
+            send_whatsapp_message(payment_message, incoming_number)
+        else:
+            handle_transcribe_link(incoming_message, incoming_number)
     elif len(conversation_state['messages']) > 1 and \
             standardize_input(conversation_state['messages'][-2]).startswith('search'):
         search_term = conversation_state['messages'][-1]
