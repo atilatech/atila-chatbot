@@ -30,7 +30,7 @@ See:
 `ngrok http 5000`
 
 The WhatsApp chatbot can only send you messages if you have messaged it in the last 24 hours.
-So make sure you've sent a message to the chatbot using the link provided earlier.
+So make sure you've sent a message to the chatbot using the wa.me link provided earlier.
 
 ```bash
 curl -X POST \
