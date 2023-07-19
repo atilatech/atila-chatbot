@@ -1,3 +1,4 @@
+from time import sleep
 from utils.credentials import ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY
 from utils.whatsapp import send_whatsapp_message
 from algoliasearch.search_client import SearchClient
@@ -5,11 +6,14 @@ from algoliasearch.search_client import SearchClient
 algolia_client = SearchClient.create(ALGOLIA_APPLICATION_ID, ALGOLIA_API_KEY)
 
 
-def handle_mentors_search(incoming_message: str, incoming_number: str):
-    word_1, word_2, *search_term = incoming_message.split(' ')
+def handle_mentors_search(search_term: str, incoming_number: str):
     results = search_mentors(search_term)
     # display results
-    send_whatsapp_message(f"search results for '{incoming_message}'", incoming_number)
+    for index, result in enumerate(results[:5]):
+        send_whatsapp_message(f"{get_profile_message(result, index)}", incoming_number, media_url=result['profile_pic_url'])
+        # wait
+        sleep(3)
+
 
 
 def search_mentors(search_term):
@@ -20,8 +24,18 @@ def search_mentors(search_term):
 
     # Search the index and print the results
     results = index.search(search_term)
-    print(results["hits"])
-    return results["hits"]
+    profiles = [get_profile(result) for result in results['hits']]
 
+    print(profiles)
+    return profiles
 
-search_mentors('healthcare')
+def get_profile(search_result):
+    return {
+        'first_name': search_result['user_json']['first_name'],
+        'last_name': search_result['user_json']['last_name'],
+        'profile_pic_url': search_result['user_json']['profile_pic_url'],
+        'description': search_result['description'],
+    }
+
+def get_profile_message(profile, index):
+    return f"{index + 1}. {profile['first_name']} {profile['last_name']}\n\n{profile['description']}"
