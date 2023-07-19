@@ -33,7 +33,8 @@ async def whatsapp():
         print(response)
         return response
     if incoming_msg.lower().startswith('mentor search') or incoming_msg.lower().startswith('mentor search'):
-        handle_mentors_search(incoming_msg, incoming_number)
+        value = incoming_msg.lower().split('mentor search')[1].strip()
+        handle_mentors_search(value, incoming_number)
     else:
         send_whatsapp_message(f"invalid command", incoming_number)
 
