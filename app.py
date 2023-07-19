@@ -2,11 +2,12 @@ import asyncio
 
 from flask import Flask, request
 
-from utils.atlas import handle_incoming_atlas_chat_message
+# from utils.atlas import handle_incoming_atlas_chat_message
 from utils.credentials import WHATSAPP_NUMBER
 import datetime
 
 from utils.mentors import handle_mentors_search
+from utils.whatsapp import send_whatsapp_message
 
 app = Flask(__name__)
 
@@ -33,8 +34,12 @@ async def whatsapp():
         return response
     if incoming_msg.lower().startswith('mentor search') or incoming_msg.lower().startswith('mentor search'):
         handle_mentors_search(incoming_msg, incoming_number)
+    else:
+        send_whatsapp_message(f"invalid command", incoming_number)
 
-    return handle_incoming_atlas_chat_message(incoming_msg, incoming_number, first_name)
+    return 'ok'
+
+    # return handle_incoming_atlas_chat_message(incoming_msg, incoming_number, first_name)
 
 
 async def run_flask_app():

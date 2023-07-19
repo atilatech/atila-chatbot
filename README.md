@@ -36,7 +36,7 @@ So make sure you've sent a message to the chatbot using the link provided earlie
 curl -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "Body=heyman&WaId=<your_phone_number>&ProfileName=Tomiwa[CURL]" \
-  http://127.0.0.1:5000/whatsapp
+  http://127.0.0.1:5001/whatsapp
 
 ```
 
@@ -45,7 +45,7 @@ curl -X POST \
 curl -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "Body=mentor search healthcare&WaId=19058758867&ProfileName=Tomiwa[CURL]" \
-  http://127.0.0.1:5000/whatsapp
+  http://127.0.0.1:5001/whatsapp
 ```
 
 ## Embed the Data
