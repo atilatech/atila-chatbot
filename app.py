@@ -6,6 +6,8 @@ from utils.atlas import handle_incoming_atlas_chat_message
 from utils.credentials import WHATSAPP_NUMBER
 import datetime
 
+from utils.mentors import handle_mentors_search
+
 app = Flask(__name__)
 
 one_hour_ago = datetime.datetime.now() - datetime.timedelta(hours=1)
@@ -29,6 +31,8 @@ async def whatsapp():
         response = 'this number is from the bot'
         print(response)
         return response
+    if incoming_msg.lower().startswith('mentor search') or incoming_msg.lower().startswith('mentor search'):
+        handle_mentors_search(incoming_msg, incoming_number)
 
     return handle_incoming_atlas_chat_message(incoming_msg, incoming_number, first_name)
 
