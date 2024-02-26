@@ -29,12 +29,23 @@ See:
 `brew install ngrok/ngrok/ngrok`
 `ngrok http 5000`
 
+The WhatsApp chatbot can only send you messages if you have messaged it in the last 24 hours.
+So make sure you've sent a message to the chatbot using the wa.me link provided earlier.
+
 ```bash
 curl -X POST \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "Body=heyman&WaId=<your_phone_number>&ProfileName=Tomiwa[CURL]" \
-  http://127.0.0.1:5000/whatsapp
+  http://127.0.0.1:5001/whatsapp
 
+```
+
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "Body=mentor search healthcare&WaId=19058758867&ProfileName=Tomiwa[CURL]" \
+  http://127.0.0.1:5001/whatsapp
 ```
 
 ## Embed the Data
