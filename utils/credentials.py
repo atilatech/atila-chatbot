@@ -15,3 +15,7 @@ ALGOLIA_APPLICATION_ID = os.getenv('ALGOLIA_APPLICATION_ID', False)
 ALGOLIA_API_KEY = os.getenv('ALGOLIA_API_KEY', False)
 
 ATILA_CORE_SERVICE_URL = "http://127.0.0.1:8000/api"
+
+# In staging and prod ATILA_CORE_SERVICE_URL and ATILA_API_URL will be different endpoints
+ATILA_API_URL = os.getenv('ATILA_API_URL', False)
+ATILA_API_KEY = os.getenv('ATILA_API_KEY', False)
